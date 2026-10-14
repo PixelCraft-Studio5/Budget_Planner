@@ -7,6 +7,7 @@ import BottomNav from "./components/BottomNav";
 import Footer from "./components/Footer";
 import { useAuth } from "./context/AuthContext";
 import { UserDataProvider, useUserData } from "./context/UserDataContext";
+import { supabaseConfigError } from "./lib/supabase";
 
 function PlannerApp() {
   const [activePage, setActivePage] = useState("dashboard");
@@ -75,6 +76,24 @@ function AuthenticatedApp() {
 
 function App() {
   const { user, isLoading, error, recoveryMode } = useAuth();
+
+  if (supabaseConfigError) {
+    return (
+      <main className="auth-screen">
+        <section className="auth-panel" aria-labelledby="config-error-title">
+          <h1 id="config-error-title">App configuration required</h1>
+          <p className="auth-error" role="alert">
+            {supabaseConfigError}
+          </p>
+          <p className="auth-description">
+            In your hosting dashboard, add the Supabase project URL and
+            publishable key as build environment variables. Keep secret and
+            service-role keys out of the browser app.
+          </p>
+        </section>
+      </main>
+    );
+  }
 
   if (isLoading) {
     return (

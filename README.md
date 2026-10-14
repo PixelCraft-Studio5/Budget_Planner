@@ -19,6 +19,10 @@ per-user cloud-synced budget and profile data.
    Use the project URL shown in **Project Settings → API** (without `/rest/v1`)
    and the publishable key. Never put a `service_role` or secret key in a
    browser app.
+   For a live deployment, add both variables in your hosting provider's
+   environment-variable/build settings as well. `.env.local` is ignored by Git
+   and is not uploaded when you push your code. Set them for the production
+   environment, then trigger a fresh build and deployment.
 3. In Resend, add and verify a sending domain and create an API key.
 4. In Supabase, open **Authentication → SMTP Settings** (in some Dashboard
    versions this is under **Project Settings → Authentication → SMTP Settings**),
