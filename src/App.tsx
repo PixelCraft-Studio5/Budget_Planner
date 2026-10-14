@@ -6,8 +6,7 @@ import Auth from "./pages/Auth";
 import BottomNav from "./components/BottomNav";
 import Footer from "./components/Footer";
 import { useAuth } from "./context/AuthContext";
-import { BudgetProvider } from "./context/BudgetContext";
-import { ProfileProvider } from "./context/ProfileContext";
+import { UserDataProvider, useUserData } from "./context/UserDataContext";
 
 function PlannerApp() {
   const [activePage, setActivePage] = useState("dashboard");
@@ -41,24 +40,73 @@ function PlannerApp() {
   );
 }
 
+function AuthenticatedApp() {
+  const { status, loadError, retryLoad } = useUserData();
+
+  if (status === "loading") {
+    return (
+      <main className="auth-screen" role="status">
+        Loading your Supabase data...
+      </main>
+    );
+  }
+
+  if (status === "error") {
+    return (
+      <main className="auth-screen">
+        <section className="auth-panel">
+          <h1>Could not load your data</h1>
+          <p className="auth-error" role="alert">{loadError}</p>
+          <button
+            className="auth-submit-button"
+            type="button"
+            onClick={retryLoad}
+          >
+            Try again
+          </button>
+        </section>
+        <Footer />
+      </main>
+    );
+  }
+
+  return <PlannerApp />;
+}
+
 function App() {
-  const { user } = useAuth();
+  const { user, isLoading, error, recoveryMode } = useAuth();
+
+  if (isLoading) {
+    return (
+      <main className="auth-screen" role="status">
+        Connecting to Supabase...
+      </main>
+    );
+  }
+
+  if (recoveryMode) {
+    return (
+      <div className="auth-layout">
+        <Auth recoveryMode />
+        <Footer />
+      </div>
+    );
+  }
 
   if (!user) {
     return (
       <div className="auth-layout">
         <Auth />
+        {error && <p className="auth-error" role="alert">{error}</p>}
         <Footer />
       </div>
     );
   }
 
   return (
-    <ProfileProvider key={user.email}>
-      <BudgetProvider>
-        <PlannerApp />
-      </BudgetProvider>
-    </ProfileProvider>
+    <UserDataProvider key={user.id} user={user}>
+      <AuthenticatedApp />
+    </UserDataProvider>
   );
 }
 

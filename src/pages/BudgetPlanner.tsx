@@ -102,6 +102,7 @@ function BudgetPlanner() {
 
   const [saveMessage, setSaveMessage] =
     useState("");
+  const [saveError, setSaveError] = useState("");
 
   /*
    * ========================================
@@ -357,8 +358,20 @@ function BudgetPlanner() {
    * ========================================
    */
 
-  const handleReset = () => {
-    resetBudget();
+  const handleReset = async () => {
+    setSaveError("");
+
+    try {
+      await resetBudget();
+    } catch (error) {
+      setSaveError(
+        error instanceof Error
+          ? error.message
+          : "Could not reset your budget in Supabase."
+      );
+      setShowResetModal(false);
+      return;
+    }
 
     setWorkIncomeInput("");
     setSideHustleIncomeInput("");
@@ -376,12 +389,19 @@ function BudgetPlanner() {
    * ========================================
    */
 
-  const handleSave = () => {
-    saveBudget();
+  const handleSave = async () => {
+    setSaveError("");
 
-    setSaveMessage(
-      "Your budget has been saved successfully."
-    );
+    try {
+      await saveBudget();
+      setSaveMessage("Your budget has been saved successfully.");
+    } catch (error) {
+      setSaveError(
+        error instanceof Error
+          ? error.message
+          : "Could not save your budget to Supabase."
+      );
+    }
 
     window.setTimeout(() => {
       setSaveMessage("");
@@ -985,7 +1005,7 @@ function BudgetPlanner() {
         {/* SAVE SUCCESS MESSAGE */}
 
         {saveMessage && (
-          <div className="budget-save-message">
+          <div className="budget-save-message" role="status">
 
             <FontAwesomeIcon
               icon={faFloppyDisk}
@@ -996,6 +1016,12 @@ function BudgetPlanner() {
             </span>
 
           </div>
+        )}
+
+        {saveError && (
+          <p className="auth-error" role="alert">
+            Supabase save failed: {saveError}
+          </p>
         )}
 
         {/* SAVE */}
@@ -1094,4 +1120,3 @@ function BudgetPlanner() {
 }
 
 export default BudgetPlanner;
-

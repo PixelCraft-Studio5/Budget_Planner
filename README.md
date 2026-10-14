@@ -1,32 +1,56 @@
-# React + TypeScript + Vite
+# Budget Planner
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+A React, TypeScript and Vite budget planner with Supabase authentication and
+per-user cloud-synced budget and profile data.
 
-Currently, two official plugins are available:
+## Supabase setup
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+1. In the Supabase Dashboard, open **SQL Editor** and run
+   [`supabase/schema.sql`](./supabase/schema.sql). This creates the `user_data`
+   table and row-level security policies that restrict each account to its own
+   budget and profile.
+2. Set the project URL and publishable key in the project-root `.env.local`:
 
-## React Compiler
+   ```dotenv
+   VITE_SUPABASE_URL=https://your-project-ref.supabase.co
+   VITE_SUPABASE_ANON_KEY=your-supabase-publishable-key
+   ```
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+   Use the project URL shown in **Project Settings → API** (without `/rest/v1`)
+   and the publishable key. Never put a `service_role` or secret key in a
+   browser app.
+3. In Resend, add and verify a sending domain and create an API key.
+4. In Supabase, open **Authentication → SMTP Settings** (in some Dashboard
+   versions this is under **Project Settings → Authentication → SMTP Settings**),
+   enable custom SMTP, and enter:
 
-## Expanding the Oxlint configuration
+   | Setting | Value |
+   | --- | --- |
+   | Sender email | An address on your verified Resend domain |
+   | Sender name | Budget Planner |
+   | Host | `smtp.resend.com` |
+   | Port | `465` |
+   | Username | `resend` |
+   | Password | Your Resend API key |
 
-If you are developing a production application, we recommend enabling type-aware lint rules by installing `oxlint-tsgolint` and editing `.oxlintrc.json`:
+   Keep the Resend API key in Supabase SMTP settings only. Do not add it to
+   `.env.local` or frontend code.
+5. In Supabase **Authentication → URL Configuration**, set the Site URL to
+   your app URL and add both the local app URL (for example
+   `http://localhost:5173`) and deployed URL to the allowed redirect URLs.
+6. In **Authentication → Providers → Email**, enable email confirmations if
+   you want new accounts to confirm their email before signing in.
+7. Install dependencies and start the app:
 
-```json
-{
-  "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "typescript", "oxc"],
-  "options": {
-    "typeAware": true
-  },
-  "rules": {
-    "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
-  }
-}
-```
+   ```sh
+   npm install
+   npm run dev
+   ```
 
-See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
+Accounts are managed by Supabase Auth. Budgets and profiles are stored in the
+`user_data` table and are synced across devices. Existing per-account data in
+the browser is copied to Supabase the first time the corresponding Supabase
+account signs in. Signup confirmation and password-reset messages are sent by
+Supabase Auth through the configured Resend SMTP service. The app includes a
+"Forgot your password?" flow and lets users set a new password from the emailed
+recovery link.

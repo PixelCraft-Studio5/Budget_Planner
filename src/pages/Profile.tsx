@@ -20,6 +20,8 @@ function Profile() {
   const {
     profile,
     updateProfile,
+    saveProfile,
+    syncError,
   } = useProfile();
 
   const [name, setName] = useState(
@@ -38,24 +40,33 @@ function Profile() {
 
   const [saveMessage, setSaveMessage] =
     useState("");
+  const [saveError, setSaveError] = useState("");
 
-  const handleSave = () => {
+  const handleSave = async () => {
+    setSaveError("");
     updateProfile({
       name: name.trim() || "User",
       email: email.trim() || "user@example.com",
       currency,
     });
 
-    setSaveMessage(
-      "Your profile has been saved successfully."
-    );
+    try {
+      await saveProfile();
+      setSaveMessage("Your profile has been saved successfully.");
+    } catch (error) {
+      setSaveError(
+        error instanceof Error
+          ? error.message
+          : "Could not save your profile to Supabase."
+      );
+    }
 
     window.setTimeout(() => {
       setSaveMessage("");
     }, 3000);
   };
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
     const confirmed = window.confirm(
       "Are you sure you want to log out?"
     );
@@ -64,7 +75,13 @@ function Profile() {
       return;
     }
 
-    signOut();
+    try {
+      await signOut();
+    } catch (error) {
+      setSaveError(
+        error instanceof Error ? error.message : "Could not sign out."
+      );
+    }
   };
 
   return (
@@ -448,6 +465,12 @@ function Profile() {
             {saveMessage}
           </span>
         </div>
+      )}
+
+      {(saveError || syncError) && (
+        <p className="auth-error" role="alert">
+          {saveError || `Supabase sync failed: ${syncError}`}
+        </p>
       )}
 
       {/* ================================
