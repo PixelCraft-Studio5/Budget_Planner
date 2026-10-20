@@ -166,6 +166,19 @@ export function UserDataProvider({
   const [loadAttempt, setLoadAttempt] = useState(0);
 
   useEffect(() => {
+    if (status === "ready") {
+      document.body.classList.toggle("dark-mode", profile.darkMode);
+    }
+  }, [profile.darkMode, status]);
+
+  useEffect(
+    () => () => {
+      document.body.classList.remove("dark-mode");
+    },
+    []
+  );
+
+  useEffect(() => {
     let isMounted = true;
 
     const load = async () => {
@@ -354,7 +367,6 @@ export function UserDataProvider({
     const nextProfile = defaultProfile(user.name, user.email);
     profileRef.current = nextProfile;
     setProfile(nextProfile);
-    document.body.classList.remove("dark-mode");
     await queueProfileWrite(nextProfile);
   };
 

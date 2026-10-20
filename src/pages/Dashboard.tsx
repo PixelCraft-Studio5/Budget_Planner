@@ -214,7 +214,7 @@ function Dashboard() {
 
       <header className="dashboard-header">
 
-        <div>
+        <div className="dashboard-header-copy">
 
           <p className="dashboard-eyebrow">
             Your financial overview

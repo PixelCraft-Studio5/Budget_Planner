@@ -428,7 +428,10 @@ function Profile() {
                   !profile.darkMode,
               })
             }
-            aria-label="Toggle dark mode"
+            aria-label={
+              profile.darkMode ? "Switch to light mode" : "Switch to dark mode"
+            }
+            aria-pressed={profile.darkMode}
           >
             <span />
           </button>

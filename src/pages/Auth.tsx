@@ -2,6 +2,8 @@ import { useState, type FormEvent } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faEnvelope,
+  faEye,
+  faEyeSlash,
   faLock,
   faUser,
   faWallet,
@@ -28,6 +30,8 @@ function Auth({ recoveryMode = false }: AuthProps) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
   const [passwordUpdated, setPasswordUpdated] = useState(false);
@@ -193,7 +197,7 @@ function Auth({ recoveryMode = false }: AuthProps) {
                 <input
                   id="authPassword"
                   name="password"
-                  type="password"
+                  type={showPassword ? "text" : "password"}
                   autoComplete={
                     isSignUp || recoveryMode
                       ? "new-password"
@@ -209,6 +213,18 @@ function Auth({ recoveryMode = false }: AuthProps) {
                   minLength={isSignUp || recoveryMode ? 8 : undefined}
                   required
                 />
+                <button
+                  className="auth-password-toggle"
+                  type="button"
+                  onClick={() => setShowPassword((visible) => !visible)}
+                  aria-label={showPassword ? "Hide password" : "Show password"}
+                  aria-pressed={showPassword}
+                >
+                  <FontAwesomeIcon
+                    icon={showPassword ? faEye : faEyeSlash}
+                    aria-hidden="true"
+                  />
+                </button>
               </div>
             </div>
           )}
@@ -221,7 +237,7 @@ function Auth({ recoveryMode = false }: AuthProps) {
                 <input
                   id="authConfirmPassword"
                   name="confirmPassword"
-                  type="password"
+                  type={showConfirmPassword ? "text" : "password"}
                   autoComplete="new-password"
                   value={confirmPassword}
                   onChange={(event) => setConfirmPassword(event.target.value)}
@@ -229,6 +245,24 @@ function Auth({ recoveryMode = false }: AuthProps) {
                   minLength={8}
                   required
                 />
+                <button
+                  className="auth-password-toggle"
+                  type="button"
+                  onClick={() =>
+                    setShowConfirmPassword((visible) => !visible)
+                  }
+                  aria-label={
+                    showConfirmPassword
+                      ? "Hide confirm password"
+                      : "Show confirm password"
+                  }
+                  aria-pressed={showConfirmPassword}
+                >
+                  <FontAwesomeIcon
+                    icon={showConfirmPassword ? faEye : faEyeSlash}
+                    aria-hidden="true"
+                  />
+                </button>
               </div>
             </div>
           )}

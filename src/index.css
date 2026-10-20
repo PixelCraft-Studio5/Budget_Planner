@@ -161,19 +161,26 @@ select:focus-visible {
   place-items: center;
 
   padding: 28px 18px;
+
+  background:
+    radial-gradient(ellipse at 12% 10%, rgba(22, 131, 75, 0.10), transparent 36%),
+    radial-gradient(ellipse at 88% 90%, rgba(22, 131, 75, 0.07), transparent 34%),
+    #f5f8f6;
 }
 
 .auth-panel {
   width: 100%;
-  max-width: 420px;
+  max-width: 440px;
 
-  padding: 32px;
+  padding: 36px;
 
   background: #ffffff;
-  border: 1px solid #e4eae6;
-  border-radius: 18px;
+  border: 1px solid rgba(220, 230, 223, 0.9);
+  border-radius: 22px;
 
-  box-shadow: 0 8px 32px rgba(23, 32, 27, 0.06);
+  box-shadow:
+    0 24px 70px rgba(23, 55, 37, 0.09),
+    0 3px 10px rgba(23, 32, 27, 0.04);
 }
 
 .auth-brand-icon {
@@ -270,6 +277,36 @@ select:focus-visible {
   color: #17201b;
 
   font-size: 13px;
+}
+
+.auth-password-toggle {
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+
+  width: 34px;
+  height: 34px;
+  margin-right: -6px;
+  padding: 0;
+
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: #77837b;
+
+  transition:
+    background 0.2s ease,
+    color 0.2s ease;
+}
+
+.auth-password-toggle:hover {
+  background: #edf4ef;
+  color: #16834b;
+}
+
+.auth-password-toggle:focus-visible {
+  outline: 3px solid rgba(22, 131, 75, 0.2);
+  outline-offset: 1px;
 }
 
 .auth-input-wrapper input:-webkit-autofill,
@@ -1271,45 +1308,86 @@ select:focus-visible {
 }
 
 .dashboard-header {
+  position: relative;
+  overflow: hidden;
+
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: space-between;
 
-  gap: 18px;
+  gap: 24px;
 
-  margin-bottom: 22px;
+  min-height: 142px;
+  margin-bottom: 24px;
+  padding: 26px 30px;
+
+  border: 1px solid #dcebe1;
+  border-radius: 22px;
+  background:
+    radial-gradient(circle at 88% 12%, rgba(22, 131, 75, 0.10), transparent 28%),
+    linear-gradient(115deg, #ffffff 0%, #f0f8f3 100%);
+  box-shadow: 0 8px 28px rgba(23, 55, 37, 0.05);
+}
+
+.dashboard-header::after {
+  position: absolute;
+  right: 98px;
+  bottom: -112px;
+
+  width: 210px;
+  height: 210px;
+
+  border: 1px solid rgba(22, 131, 75, 0.10);
+  border-radius: 50%;
+  content: "";
+  pointer-events: none;
+}
+
+.dashboard-header-copy {
+  position: relative;
+  z-index: 1;
 }
 
 .dashboard-eyebrow {
-  margin-bottom: 7px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
 
+  margin-bottom: 9px;
   color: #16834b;
 
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 800;
 
   text-transform: uppercase;
-  letter-spacing: 0.1em;
+  letter-spacing: 0.13em;
+}
+
+.dashboard-eyebrow::before {
+  width: 19px;
+  height: 2px;
+  border-radius: 2px;
+  background: currentColor;
+  content: "";
 }
 
 .dashboard-header h1 {
-  margin-bottom: 8px;
+  margin-bottom: 7px;
 
   color: #17201b;
 
-  font-size: 28px;
-  font-family: "Segoe UI", system-ui, sans-serif;
+  font-size: clamp(25px, 3vw, 34px);
   font-weight: 700;
 
   line-height: 1.15;
-  letter-spacing: -0.02em;
+  letter-spacing: -0.035em;
   font-kerning: normal;
 }
 
 .dashboard-subtitle {
   color: #6d7771;
 
-  font-size: 14px;
+  font-size: 13px;
   line-height: 1.5;
 }
 
@@ -2603,13 +2681,16 @@ body.dark-mode .main-content {
 }
 
 body.dark-mode .auth-screen {
-  background: #101512;
+  background:
+    radial-gradient(ellipse at 12% 10%, rgba(70, 154, 100, 0.12), transparent 36%),
+    radial-gradient(ellipse at 88% 90%, rgba(70, 154, 100, 0.08), transparent 34%),
+    #101512;
 }
 
 body.dark-mode .auth-panel {
   background: #18211c;
   border-color: #2b372f;
-  box-shadow: none;
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.24);
 }
 
 body.dark-mode .auth-panel h1,
@@ -2654,6 +2735,15 @@ body.dark-mode .auth-input-wrapper input:-webkit-autofill:focus {
 
 body.dark-mode .auth-input-wrapper input::placeholder {
   color: #68756d;
+}
+
+body.dark-mode .auth-password-toggle {
+  color: #9ca8a0;
+}
+
+body.dark-mode .auth-password-toggle:hover {
+  background: #26352b;
+  color: #72d19a;
 }
 
 body.dark-mode .auth-switch-prompt button {
@@ -2866,6 +2956,18 @@ body.dark-mode .dashboard-card-header-icon,
 body.dark-mode .monthly-budget-icon {
   background: #26352b;
   color: #72d19a;
+}
+
+body.dark-mode .dashboard-header {
+  border-color: #2b3b30;
+  background:
+    radial-gradient(circle at 88% 12%, rgba(70, 154, 100, 0.12), transparent 28%),
+    linear-gradient(115deg, #18211c 0%, #1a2920 100%);
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.12);
+}
+
+body.dark-mode .dashboard-header::after {
+  border-color: rgba(114, 209, 154, 0.12);
 }
 
 body.dark-mode .dashboard-stat-card span,
@@ -3225,11 +3327,15 @@ body.dark-mode .reset-modal-cancel {
   }
 
   .dashboard-header {
-    gap: 10px;
+    min-height: 0;
+    gap: 12px;
+    margin-bottom: 20px;
+    padding: 20px;
   }
 
   .dashboard-header h1 {
-    font-size: 28px;
+    font-size: clamp(23px, 6vw, 28px);
+    overflow-wrap: anywhere;
   }
 
   .dashboard-header-icon {
