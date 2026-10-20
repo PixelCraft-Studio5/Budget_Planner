@@ -24,6 +24,9 @@ function BudgetPlanner() {
     updateBudget,
     saveBudget,
     resetBudget,
+    isOnline,
+    hasPendingSync,
+    syncError,
   } = useBudget();
 
   const { profile } = useProfile();
@@ -393,13 +396,19 @@ function BudgetPlanner() {
     setSaveError("");
 
     try {
-      await saveBudget();
-      setSaveMessage("Your budget has been saved successfully.");
+      const result = await saveBudget();
+      setSaveMessage(
+        result === "offline"
+          ? "Budget saved on this device. It will sync when you reconnect."
+          : result === "queued"
+            ? "Budget saved on this device, but cloud sync has not completed."
+          : "Your budget has been saved successfully."
+      );
     } catch (error) {
       setSaveError(
         error instanceof Error
           ? error.message
-          : "Could not save your budget to Supabase."
+          : "Could not save your budget."
       );
     }
 
@@ -540,9 +549,9 @@ function BudgetPlanner() {
             </h3>
           </div>
 
-          <FontAwesomeIcon
-            icon={faCalculator}
-          />
+          <div className="total-icon" aria-hidden="true">
+            <FontAwesomeIcon icon={faCalculator} />
+          </div>
 
         </div>
 
@@ -803,7 +812,7 @@ function BudgetPlanner() {
 
         {/* TOTAL EXPENSES */}
 
-        <div className="expense-total-card">
+        <div className="total-card expense-total-card">
 
           <div>
             <span>Total Expenses</span>
@@ -816,9 +825,9 @@ function BudgetPlanner() {
             </h3>
           </div>
 
-          <FontAwesomeIcon
-            icon={faReceipt}
-          />
+          <div className="total-icon" aria-hidden="true">
+            <FontAwesomeIcon icon={faReceipt} />
+          </div>
 
         </div>
 
@@ -925,7 +934,7 @@ function BudgetPlanner() {
 
         {/* TOTAL SAVINGS */}
 
-        <div className="savings-total-card">
+        <div className="total-card savings-total-card">
 
           <div>
             <span>Total Savings</span>
@@ -938,9 +947,9 @@ function BudgetPlanner() {
             </h3>
           </div>
 
-          <FontAwesomeIcon
-            icon={faPiggyBank}
-          />
+          <div className="total-icon" aria-hidden="true">
+            <FontAwesomeIcon icon={faPiggyBank} />
+          </div>
 
         </div>
 
@@ -1002,6 +1011,20 @@ function BudgetPlanner() {
 
       <div className="budget-actions">
 
+        {(!isOnline || hasPendingSync) && (
+          <p className="budget-offline-note" role="status">
+            {!isOnline
+              ? "Offline mode: your budget is available here. Save changes to this device and they will sync when you reconnect."
+              : "Your saved budget changes are waiting to sync."}
+          </p>
+        )}
+
+        {syncError && (
+          <p className="auth-error" role="alert">
+            Budget data status: {syncError}
+          </p>
+        )}
+
         {/* SAVE SUCCESS MESSAGE */}
 
         {saveMessage && (
@@ -1020,7 +1043,7 @@ function BudgetPlanner() {
 
         {saveError && (
           <p className="auth-error" role="alert">
-            Supabase save failed: {saveError}
+            Could not save the budget on this device: {saveError}
           </p>
         )}
 

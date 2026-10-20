@@ -1,0 +1,18 @@
+{
+  "name": "Budget Planner",
+  "short_name": "Budget Planner",
+  "description": "Plan your budget and manage your money, online or offline.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#f6f8f6",
+  "theme_color": "#16834b",
+  "icons": [
+    {
+      "src": "/app-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

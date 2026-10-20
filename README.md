@@ -58,3 +58,12 @@ account signs in. Signup confirmation and password-reset messages are sent by
 Supabase Auth through the configured Resend SMTP service. The app includes a
 "Forgot your password?" flow and lets users set a new password from the emailed
 recovery link.
+
+## Install and offline use
+
+The deployed app can be installed from the browser's **Install app** option.
+After the app has been opened online at least once, its app shell and each
+account's budget are cached on that device. Budgets can be viewed offline, and
+changes saved while offline are kept on the device and synced to Supabase when
+the connection returns. If that device and the cloud both changed the budget,
+the offline device's saved budget takes precedence.

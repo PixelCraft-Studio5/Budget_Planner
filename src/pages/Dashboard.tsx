@@ -48,6 +48,11 @@ function Dashboard() {
   const spendingMoney =
     calculateSpendingMoney(budget);
 
+  const hasBudgetData =
+    totalIncome > 0 ||
+    totalExpenses > 0 ||
+    totalSavings > 0;
+
   /*
    * ========================================
    * MONTHLY BUDGET
@@ -78,6 +83,16 @@ function Dashboard() {
    */
 
   const getBudgetHealth = () => {
+    if (!hasBudgetData) {
+      return {
+        label: "Not set up",
+        description:
+          "Add income, expenses or savings to see your budget health.",
+        className: "empty",
+        icon: faWallet,
+      };
+    }
+
     if (spendingMoney < 0) {
       return {
         label: "Over Budget",
@@ -201,11 +216,6 @@ function Dashboard() {
    * BUDGET DATA CHECK
    * ========================================
    */
-
-  const hasBudgetData =
-    totalIncome > 0 ||
-    totalExpenses > 0 ||
-    totalSavings > 0;
 
   return (
     <div className="dashboard-page">

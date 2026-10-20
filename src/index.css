@@ -101,6 +101,23 @@ select:focus-visible {
   text-decoration: underline;
 }
 
+.install-app-button {
+  margin-left: 12px;
+  padding: 6px 10px;
+
+  border: 1px solid #cfe3d5;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #16834b;
+
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.install-app-button:hover {
+  background: #edf8f1;
+}
+
 .auth-screen + .site-footer {
   padding-bottom: 28px;
 }
@@ -506,6 +523,12 @@ select:focus-visible {
   letter-spacing: -0.03em;
 }
 
+.budget-page .page-header h1 {
+  font-size: clamp(25px, 3vw, 34px);
+  font-weight: 700;
+  letter-spacing: -0.035em;
+}
+
 .page-header > p:last-child {
   max-width: 600px;
 
@@ -592,6 +615,14 @@ select:focus-visible {
   margin-bottom: 16px;
 }
 
+.budget-section > .input-group {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(220px, 280px);
+  grid-template-rows: auto auto;
+  column-gap: 24px;
+  align-items: center;
+}
+
 .input-group:last-child {
   margin-bottom: 0;
 }
@@ -599,14 +630,31 @@ select:focus-visible {
 .input-group label {
   display: block;
 
-  margin-bottom: 7px;
+  grid-column: 1;
+  grid-row: 1;
+  align-self: end;
+
+  margin-bottom: 4px;
 
   color: #303a33;
   font-size: 12px;
   font-weight: 700;
 }
 
+.budget-section > .input-group > p {
+  grid-column: 1;
+  grid-row: 2;
+  align-self: start;
+
+  color: #7b857f;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
 .currency-input {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+
   display: flex;
   align-items: center;
 
@@ -697,6 +745,7 @@ select:focus-visible {
 .total-card {
   display: flex;
   align-items: center;
+  justify-content: space-between;
 
   gap: 14px;
 
@@ -713,12 +762,17 @@ select:focus-visible {
     0 8px 24px rgba(23, 32, 27, 0.12);
 }
 
+.total-card > div:first-child {
+  min-width: 0;
+}
+
 .total-card .total-icon {
   background: rgba(255, 255, 255, 0.1);
   color: #ffffff;
 }
 
-.total-card p {
+.total-card span {
+  display: block;
   margin-bottom: 4px;
 
   color: #b9c4bd;
@@ -726,13 +780,14 @@ select:focus-visible {
   font-size: 12px;
 }
 
-.total-card h2 {
+.total-card h3 {
   color: #ffffff;
 
   font-size: 25px;
   font-weight: 750;
 
   line-height: 1.15;
+  overflow-wrap: anywhere;
 }
 
 /* =========================================================
@@ -784,8 +839,19 @@ select:focus-visible {
   gap: 10px;
 }
 
+.budget-offline-note {
+  padding: 10px 12px;
+  border: 1px solid #d7e7dc;
+  border-radius: 10px;
+  background: #f1f8f3;
+  color: #41644c;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
 .expense-item {
-  display: flex;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(150px, 170px) 40px;
   align-items: center;
 
   gap: 10px;
@@ -982,20 +1048,12 @@ select:focus-visible {
 
 /* Expense total */
 
-.expense-total-card {
-  margin-top: 18px;
-}
-
 /* =========================================================
    SAVINGS
 ========================================================= */
 
 .savings-section {
   margin-top: 20px;
-}
-
-.savings-total-card {
-  margin-top: 18px;
 }
 
 /* =========================================================
@@ -1617,6 +1675,11 @@ select:focus-visible {
   border-color: #f0caca;
 }
 
+.budget-health-card.empty {
+  background: #f4f7f5;
+  border-color: #dfe7e1;
+}
+
 .budget-health-icon {
   width: 38px;
   height: 38px;
@@ -1645,6 +1708,11 @@ select:focus-visible {
 .budget-health-card.danger .budget-health-icon {
   background: #f9dada;
   color: #bd3d3d;
+}
+
+.budget-health-card.empty .budget-health-icon {
+  background: #e5ece7;
+  color: #627168;
 }
 
 .budget-health-content {
@@ -2702,6 +2770,16 @@ body.dark-mode .auth-eyebrow {
   color: #72d19a;
 }
 
+body.dark-mode .install-app-button {
+  border-color: #36523e;
+  background: #18211c;
+  color: #72d19a;
+}
+
+body.dark-mode .install-app-button:hover {
+  background: #26352b;
+}
+
 body.dark-mode .auth-description,
 body.dark-mode .auth-switch-prompt {
   color: #9ca8a0;
@@ -2817,6 +2895,7 @@ body.dark-mode .expense-category-header h3 {
 
 body.dark-mode .section-heading p,
 body.dark-mode .input-description,
+body.dark-mode .budget-section > .input-group > p,
 body.dark-mode .expense-examples {
   color: #9aa69e;
 }
@@ -3077,6 +3156,22 @@ body.dark-mode .budget-health-card.danger {
   border-color: #603434;
 }
 
+body.dark-mode .budget-health-card.empty {
+  background: #1a2420;
+  border-color: #344039;
+}
+
+body.dark-mode .budget-health-card.empty .budget-health-icon {
+  background: #26352b;
+  color: #aab8ae;
+}
+
+body.dark-mode .budget-offline-note {
+  border-color: #344d3b;
+  background: #1a2920;
+  color: #a9c9b2;
+}
+
 body.dark-mode .budget-health-heading strong {
   color: #edf2ee;
 }
@@ -3200,6 +3295,10 @@ body.dark-mode .reset-modal-cancel {
     font-size: 28px;
   }
 
+  .budget-page .page-header h1 {
+    font-size: 28px;
+  }
+
   .dashboard-summary-grid {
     grid-template-columns: repeat(3, 1fr);
   }
@@ -3254,6 +3353,10 @@ body.dark-mode .reset-modal-cancel {
     font-size: 28px;
   }
 
+  .profile-page .page-header h1 {
+    font-size: 36px;
+  }
+
   .available-money-card {
     padding: 30px;
   }
@@ -3273,10 +3376,6 @@ body.dark-mode .reset-modal-cancel {
 
   .budget-section {
     padding: 28px;
-  }
-
-  .page-header h1 {
-    font-size: 36px;
   }
 
   .bottom-nav {
@@ -3314,16 +3413,26 @@ body.dark-mode .reset-modal-cancel {
    MOBILE
 ========================================================= */
 
+@media (max-width: 599px) {
+  .budget-section > .input-group {
+    display: block;
+  }
+
+  .input-group label {
+    margin-bottom: 7px;
+  }
+
+  .budget-section > .input-group > p {
+    margin-bottom: 9px;
+  }
+}
+
 @media (max-width: 480px) {
   .main-content {
     padding:
       20px
       15px
       calc(105px + env(safe-area-inset-bottom));
-  }
-
-  .page-header h1 {
-    font-size: 27px;
   }
 
   .dashboard-header {
@@ -3333,9 +3442,14 @@ body.dark-mode .reset-modal-cancel {
     padding: 20px;
   }
 
-  .dashboard-header h1 {
+  .dashboard-header h1,
+  .budget-page .page-header h1 {
     font-size: clamp(23px, 6vw, 28px);
     overflow-wrap: anywhere;
+  }
+
+  .profile-page .page-header h1 {
+    font-size: 27px;
   }
 
   .dashboard-header-icon {

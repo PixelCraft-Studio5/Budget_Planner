@@ -27,10 +27,12 @@ interface UserDataContextType {
   status: "loading" | "ready" | "error";
   loadError: string | null;
   syncError: string | null;
+  isOnline: boolean;
+  hasPendingSync: boolean;
   retryLoad: () => void;
   updateBudget: (updates: Partial<Budget>) => void;
-  saveBudget: () => Promise<void>;
-  resetBudget: () => Promise<void>;
+  saveBudget: () => Promise<"synced" | "offline" | "queued">;
+  resetBudget: () => Promise<"synced" | "offline" | "queued">;
   updateProfile: (updates: Partial<Profile>) => void;
   saveProfile: () => Promise<void>;
   resetProfile: () => Promise<void>;
@@ -51,6 +53,13 @@ const defaultBudget: Budget = {
 
 const STORAGE_KEY = "budget-planner-budget";
 const PROFILE_STORAGE_KEY = "budget-planner-profile";
+const CACHE_STORAGE_KEY = "budget-planner-offline-cache";
+
+interface CachedUserData {
+  budget: Budget;
+  profile: Profile;
+  pendingSync: boolean;
+}
 
 const UserDataContext =
   createContext<UserDataContextType | undefined>(undefined);
@@ -71,6 +80,43 @@ function parseLocalValue(key: string): unknown {
   } catch (error) {
     console.error(`Failed to read local data for "${key}":`, error);
     return null;
+  }
+}
+
+function readCachedUserData(
+  key: string,
+  userName: string,
+  email: string
+): CachedUserData | null {
+  const value = parseLocalValue(key);
+
+  if (!isRecord(value) || !isRecord(value.budget)) {
+    return null;
+  }
+
+  return {
+    budget: normalizeBudget(value.budget),
+    profile: normalizeProfile(value.profile, userName, email),
+    pendingSync: value.pendingSync === true,
+  };
+}
+
+function writeCachedUserData(
+  key: string,
+  budget: Budget,
+  profile: Profile,
+  pendingSync: boolean
+) {
+  try {
+    localStorage.setItem(
+      key,
+      JSON.stringify({ budget, profile, pendingSync })
+    );
+  } catch (error) {
+    console.error("Could not save budget data on this device:", error);
+    throw new Error(
+      "Could not save your budget on this device. Check available storage and try again."
+    );
   }
 }
 
@@ -157,13 +203,30 @@ export function UserDataProvider({
   const [profile, setProfile] = useState<Profile>(() =>
     defaultProfile(user.name, user.email)
   );
+  const budgetRef = useRef(budget);
   const profileRef = useRef(profile);
   const profileWriteRef = useRef<Promise<void>>(Promise.resolve());
+  const pendingSyncRef = useRef(false);
+  const syncInProgressRef = useRef(false);
   const [status, setStatus] =
     useState<UserDataContextType["status"]>("loading");
   const [loadError, setLoadError] = useState<string | null>(null);
   const [syncError, setSyncError] = useState<string | null>(null);
+  const [isOnline, setIsOnline] = useState(navigator.onLine);
+  const [hasPendingSync, setHasPendingSync] = useState(false);
   const [loadAttempt, setLoadAttempt] = useState(0);
+  const cacheKey = getAccountStorageKey(CACHE_STORAGE_KEY, user.email);
+
+  useEffect(() => {
+    const updateOnlineStatus = () => setIsOnline(navigator.onLine);
+    window.addEventListener("online", updateOnlineStatus);
+    window.addEventListener("offline", updateOnlineStatus);
+
+    return () => {
+      window.removeEventListener("online", updateOnlineStatus);
+      window.removeEventListener("offline", updateOnlineStatus);
+    };
+  }, []);
 
   useEffect(() => {
     if (status === "ready") {
@@ -182,40 +245,16 @@ export function UserDataProvider({
     let isMounted = true;
 
     const load = async () => {
-      const { data, error } = await supabase
-        .from("user_data")
-        .select("budget, profile")
-        .eq("user_id", user.id)
-        .maybeSingle();
-
-      if (error) {
-        throw error;
-      }
-
       const localBudgetKey = getAccountStorageKey(STORAGE_KEY, user.email);
       const localProfileKey = getAccountStorageKey(
         PROFILE_STORAGE_KEY,
         user.email
       );
-
-      if (data) {
-        const nextBudget = normalizeBudget(data.budget);
-        const nextProfile = normalizeProfile(
-          data.profile,
-          user.name,
-          user.email
-        );
-
-        if (isMounted) {
-          setBudget(nextBudget);
-          profileRef.current = nextProfile;
-          setProfile(nextProfile);
-          setStatus("ready");
-        }
-
-        return;
-      }
-
+      const cachedData = readCachedUserData(
+        cacheKey,
+        user.name,
+        user.email
+      );
       const legacyBudget = parseLocalValue(localBudgetKey);
       const accountProfile = parseLocalValue(localProfileKey);
       const oldProfile = parseLocalValue(PROFILE_STORAGE_KEY);
@@ -226,35 +265,119 @@ export function UserDataProvider({
         oldProfile.email.toLowerCase() === user.email.toLowerCase()
           ? oldProfile
           : null);
-      const nextBudget = normalizeBudget(legacyBudget);
-      const nextProfile = normalizeProfile(
+      const legacyDataExists =
+        legacyBudget !== null || legacyProfile !== null;
+      const legacyNextBudget = normalizeBudget(legacyBudget);
+      const legacyNextProfile = normalizeProfile(
         legacyProfile,
         user.name,
         user.email
       );
 
-      if (legacyBudget !== null || legacyProfile !== null) {
-        const { error: migrationError } = await supabase
-          .from("user_data")
-          .upsert({
-            user_id: user.id,
-            budget: nextBudget,
-            profile: nextProfile,
-          });
-
-        if (migrationError) {
-          throw migrationError;
+      const applyData = (
+        nextBudget: Budget,
+        nextProfile: Profile,
+        pendingSync: boolean
+      ) => {
+        if (!isMounted) {
+          return;
         }
 
-        localStorage.removeItem(localBudgetKey);
-        localStorage.removeItem(localProfileKey);
-      }
-
-      if (isMounted) {
+        budgetRef.current = nextBudget;
         setBudget(nextBudget);
         profileRef.current = nextProfile;
         setProfile(nextProfile);
+        pendingSyncRef.current = pendingSync;
+        setHasPendingSync(pendingSync);
         setStatus("ready");
+
+        try {
+          writeCachedUserData(
+            cacheKey,
+            nextBudget,
+            nextProfile,
+            pendingSync
+          );
+        } catch (cacheError) {
+          setSyncError(
+            cacheError instanceof Error
+              ? cacheError.message
+              : "Could not save your data on this device."
+          );
+        }
+      };
+
+      try {
+        const { data, error } = await supabase
+          .from("user_data")
+          .select("budget, profile")
+          .eq("user_id", user.id)
+          .maybeSingle();
+
+        if (error) {
+          throw error;
+        }
+
+        if (cachedData?.pendingSync) {
+          applyData(
+            cachedData.budget,
+            cachedData.profile,
+            true
+          );
+          return;
+        }
+
+        if (data) {
+          applyData(
+            normalizeBudget(data.budget),
+            normalizeProfile(data.profile, user.name, user.email),
+            false
+          );
+          return;
+        }
+
+        if (legacyDataExists) {
+          const { error: migrationError } = await supabase
+            .from("user_data")
+            .upsert({
+              user_id: user.id,
+              budget: legacyNextBudget,
+              profile: legacyNextProfile,
+            });
+
+          if (migrationError) {
+            throw migrationError;
+          }
+
+          localStorage.removeItem(localBudgetKey);
+          localStorage.removeItem(localProfileKey);
+          applyData(legacyNextBudget, legacyNextProfile, false);
+          return;
+        }
+
+        if (cachedData) {
+          applyData(cachedData.budget, cachedData.profile, false);
+          return;
+        }
+
+        applyData(defaultBudget, defaultProfile(user.name, user.email), false);
+      } catch (error) {
+        const hasLocalData = cachedData !== null || legacyDataExists;
+
+        if (!hasLocalData) {
+          throw error;
+        }
+
+        applyData(
+          cachedData?.budget ?? legacyNextBudget,
+          cachedData?.profile ?? legacyNextProfile,
+          cachedData?.pendingSync ?? legacyDataExists
+        );
+        setSyncError(
+          error instanceof Error
+            ? `Offline data is available on this device. Sync will retry when connected. (${error.message})`
+            : "Offline data is available on this device. Sync will retry when connected."
+        );
       }
     };
 
@@ -272,45 +395,113 @@ export function UserDataProvider({
     return () => {
       isMounted = false;
     };
-  }, [loadAttempt, user.email, user.id, user.name]);
+  }, [cacheKey, loadAttempt, user.email, user.id, user.name]);
 
   const retryLoad = useCallback(() => {
     setLoadError(null);
+    setSyncError(null);
     setStatus("loading");
     setLoadAttempt((attempt) => attempt + 1);
   }, []);
 
   const updateBudget = (updates: Partial<Budget>) => {
-    setBudget((currentBudget) => ({ ...currentBudget, ...updates }));
+    const nextBudget = { ...budgetRef.current, ...updates };
+    budgetRef.current = nextBudget;
+    setBudget(nextBudget);
+
+    try {
+      writeCachedUserData(
+        cacheKey,
+        nextBudget,
+        profileRef.current,
+        pendingSyncRef.current
+      );
+    } catch (error) {
+      setSyncError(
+        error instanceof Error
+          ? error.message
+          : "Could not save your data on this device."
+      );
+    }
   };
 
-  const saveBudget = async () => {
-    const { error } = await supabase.from("user_data").upsert({
-      user_id: user.id,
-      budget,
-    });
-
-    if (error) {
-      setSyncError(error.message);
-      throw error;
+  const syncPendingData = useCallback(async () => {
+    if (syncInProgressRef.current || !navigator.onLine) {
+      return;
     }
 
-    setSyncError(null);
+    syncInProgressRef.current = true;
+
+    try {
+      const { error } = await supabase.from("user_data").upsert({
+        user_id: user.id,
+        budget: budgetRef.current,
+        profile: profileRef.current,
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      writeCachedUserData(
+        cacheKey,
+        budgetRef.current,
+        profileRef.current,
+        false
+      );
+      pendingSyncRef.current = false;
+      setHasPendingSync(false);
+      setSyncError(null);
+    } catch (error) {
+      setSyncError(
+        error instanceof Error
+          ? error.message
+          : "Could not sync your data to Supabase."
+      );
+      throw error;
+    } finally {
+      syncInProgressRef.current = false;
+    }
+  }, [cacheKey, user.id]);
+
+  useEffect(() => {
+    if (status === "ready" && isOnline && hasPendingSync) {
+      const timeoutId = window.setTimeout(() => {
+        void syncPendingData().catch(() => undefined);
+      }, 0);
+
+      return () => window.clearTimeout(timeoutId);
+    }
+
+    return undefined;
+  }, [hasPendingSync, isOnline, status, syncPendingData]);
+
+  const saveBudget = async (): Promise<"synced" | "offline" | "queued"> => {
+    writeCachedUserData(
+      cacheKey,
+      budgetRef.current,
+      profileRef.current,
+      true
+    );
+    pendingSyncRef.current = true;
+    setHasPendingSync(true);
+
+    if (!navigator.onLine) {
+      setSyncError(null);
+      return "offline";
+    }
+
+    try {
+      await syncPendingData();
+      return "synced";
+    } catch {
+      return "queued";
+    }
   };
 
-  const resetBudget = async () => {
-    const { error } = await supabase.from("user_data").upsert({
-      user_id: user.id,
-      budget: defaultBudget,
-    });
-
-    if (error) {
-      setSyncError(error.message);
-      throw error;
-    }
-
-    setBudget({ ...defaultBudget, expenses: [] });
-    setSyncError(null);
+  const resetBudget = async (): Promise<"synced" | "offline" | "queued"> => {
+    updateBudget({ ...defaultBudget, expenses: [] });
+    return saveBudget();
   };
 
   const queueProfileWrite = (nextProfile: Profile) => {
@@ -345,6 +536,20 @@ export function UserDataProvider({
     const nextProfile = { ...profileRef.current, ...updates };
     profileRef.current = nextProfile;
     setProfile(nextProfile);
+    try {
+      writeCachedUserData(
+        cacheKey,
+        budgetRef.current,
+        nextProfile,
+        pendingSyncRef.current
+      );
+    } catch (error) {
+      setSyncError(
+        error instanceof Error
+          ? error.message
+          : "Could not save your data on this device."
+      );
+    }
     void queueProfileWrite(nextProfile);
   };
 
@@ -378,6 +583,8 @@ export function UserDataProvider({
         status,
         loadError,
         syncError,
+        isOnline,
+        hasPendingSync,
         retryLoad,
         updateBudget,
         saveBudget,

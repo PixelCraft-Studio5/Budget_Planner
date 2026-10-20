@@ -6,7 +6,18 @@ export function useBudget() {
     updateBudget,
     saveBudget,
     resetBudget,
+    isOnline,
+    hasPendingSync,
+    syncError,
   } = useUserData();
 
-  return { budget, updateBudget, saveBudget, resetBudget };
+  return {
+    budget,
+    updateBudget,
+    saveBudget,
+    resetBudget,
+    isOnline,
+    hasPendingSync,
+    syncError,
+  };
 }

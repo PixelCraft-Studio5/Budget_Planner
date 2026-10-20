@@ -11,3 +11,13 @@ createRoot(document.getElementById("root")!).render(
     </AuthProvider>
   </StrictMode>
 );
+
+if (import.meta.env.PROD && "serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    void navigator.serviceWorker
+      .register("/service-worker.js")
+      .catch((error: unknown) => {
+        console.error("Could not register the offline app service worker:", error);
+      });
+  });
+}
